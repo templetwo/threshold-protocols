@@ -24,9 +24,16 @@ numpy>=1.26.0          # Numerical operations
 filelock>=3.13.0       # Safe file operations
 hashlib                # Built-in - tamper-evident hashing
 
+# Real-time Monitor TUI
+textual>=4.0.0         # Terminal UI framework (for monitor_realtime.py)
+rich>=13.0.0           # Rich text formatting
+
 # Testing
 pytest>=8.0.0          # Test framework
 pytest-cov>=4.1.0      # Coverage reporting
+pytest-asyncio>=0.21.0 # Async test support
+pytest-mock>=3.10.0    # Mock objects
+pytest-timeout>=2.2.0  # Test timeouts
 
 # Optional: Advanced Simulation
 # torch>=2.0.0         # Uncomment for PyTorch-based swarm models

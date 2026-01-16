@@ -1,0 +1,51 @@
+# Hardware Constraints Configuration
+# Target: Mac Studio (M2 Ultra, 2023 Model)
+# Used by: Simulation Layer (to respect physical limits of the governance host)
+
+hardware:
+  device_name: "mac_studio_m2_ultra"
+  architecture: "arm64"
+
+  # Compute Limits (M2 Ultra)
+  cpu_cores: 24  # 16 performance + 8 efficiency
+  gpu_cores: 76  # Apple GPU cores
+  neural_engine_cores: 32  # Neural Engine tops
+  total_ram_gb: 36  # 36GB unified memory (from CLAUDE.md context)
+
+  # Governance Latency Budget
+  # Time allocated for Detect -> Simulate -> Deliberate cycle
+  # Mac Studio is fast - can be more aggressive
+  max_governance_latency_ms: 500
+
+  # Simulation Constraints (Derived from hardware)
+  # M2 Ultra can handle significantly more than Jetson
+  simulation:
+    max_monte_carlo_iterations: 500  # 5x more than Jetson
+    max_graph_nodes: 50000           # 10x more than Jetson
+    max_recursion_depth: 200         # 4x more than Jetson
+    timeout_ms: 5000                 # Generous timeout
+
+  # Network
+  network:
+    enabled: true
+    interface: "en0"  # Primary ethernet
+    # For SSH to other machines (Jetson, etc.)
+    ssh_targets:
+      - host: "192.168.1.74"
+        user: "tony"
+        alias: "jetson_orin"
+      - host: "192.168.1.195"
+        user: "tony_studio"
+        alias: "mac_studio_secondary"
+
+  # Sandbox Resource Allocation (Docker)
+  # M2 Ultra can allocate generously
+  sandbox_allocation:
+    memory_mb: 16384  # 16GB for sandbox (leaves 20GB for host)
+    cpu_shares: 4096  # High priority
+
+  # MLX Configuration (Apple Silicon ML)
+  mlx:
+    enabled: true
+    model_cache: "/Volumes/Temple_Core/huggingface_cache/hub/"
+    lm_studio_models: "/Volumes/Temple_Core/.lmstudio/models/"

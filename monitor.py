@@ -30,84 +30,77 @@ class MetricsWidget(Static):
         self.update(f"[bold cyan]{self.name_label}:[/]\n{data}")
 
 
-class JetsonWidget(Static):
-    def __init__(self, ip):
-        self.ip = ip
+class MacStudioWidget(Static):
+    """Monitor Mac Studio (M2 Ultra) unified memory and GPU - local execution."""
+
+    def __init__(self):
         self.last_ok = None
         self.last_err = None
-        super().__init__(name=f"jetson-{ip}")
+        super().__init__(name="mac-studio")
 
-    def _ssh(self, remote_cmd: str, timeout: int = 3) -> subprocess.CompletedProcess:
-        return subprocess.run(
-            SSH_BASE + [f"tony@{self.ip}", remote_cmd],
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            stdin=subprocess.DEVNULL,
-        )
-
-    def _parse_tegrastats(self, line: str):
-        # Typical snippet contains: "RAM 1234/7852MB ... GR3D_FREQ 45% ..."
-        ram = re.search(r"RAM\s+(\d+)\s*/\s*(\d+)MB", line)
-        gr3d = re.search(r"GR3D_FREQ\s+(\d+)%", line)
-        out = {}
-        if ram:
-            out["ram_used_mb"] = int(ram.group(1))
-            out["ram_total_mb"] = int(ram.group(2))
-        if gr3d:
-            out["gpu_util"] = int(gr3d.group(1))
-        return out
-
-    def get_jetson(self):
+    def get_mac_studio_stats(self):
+        """Get Mac Studio resource utilization."""
         try:
-            # Use tegrastats (Jetson-friendly). One sample, one line.
-            p = self._ssh("tegrastats --interval 1000 --count 1 | head -n 1", timeout=4)
-            if p.returncode != 0:
-                err = (p.stderr or p.stdout or "").strip().splitlines()[:1]
-                msg = err[0] if err else f"ssh failed (code {p.returncode})"
-                self.last_err = msg
-                return {"error": msg}
+            # Get memory info
+            mem = psutil.virtual_memory()
+            swap = psutil.swap_memory()
 
-            line = (p.stdout or "").strip()
-            parsed = self._parse_tegrastats(line)
-            if not parsed:
-                # tegrastats returned, but format unexpected
-                self.last_err = "tegrastats parse failed"
-                return {"error": "tegrastats parse failed", "raw": line[:120]}
+            # Get GPU info - on Apple Silicon, unified memory means RAM = GPU memory
+            gpu_status = "Unified"
+            try:
+                # Check if we're on Apple Silicon
+                p = subprocess.run(
+                    ["sysctl", "-n", "machdep.cpu.brand_string"],
+                    capture_output=True,
+                    text=True,
+                    timeout=2
+                )
+                if "Apple" in p.stdout:
+                    gpu_status = "M2 Ultra Active"
+            except Exception:
+                pass
 
-            parsed["timestamp"] = datetime.now().strftime("%H:%M:%S")
-            self.last_ok = parsed
+            stats = {
+                "ram_used_gb": round(mem.used / (1024**3), 1),
+                "ram_total_gb": round(mem.total / (1024**3), 1),
+                "ram_percent": mem.percent,
+                "swap_used_gb": round(swap.used / (1024**3), 1),
+                "gpu_status": gpu_status,
+                "timestamp": datetime.now().strftime("%H:%M:%S"),
+            }
+            self.last_ok = stats
             self.last_err = None
-            return parsed
+            return stats
         except Exception as e:
             self.last_err = f"{type(e).__name__}: {str(e)[:80]}"
             return {"error": self.last_err}
 
     def update_data(self):
-        data = self.get_jetson()
+        data = self.get_mac_studio_stats()
         if isinstance(data, dict) and "error" in data:
-            # show last known good if we have it
             if self.last_ok:
                 ok = self.last_ok
                 self.update(
-                    "[bold yellow]Jetson GPU:[/]\n"
+                    "[bold magenta]Mac Studio M2:[/]\n"
                     f"[red]{data['error']}[/]\n\n"
-                    f"[dim]Last OK {ok.get('timestamp','?')}: GPU {ok.get('gpu_util','?')}% | "
-                    f"RAM {ok.get('ram_used_mb','?')}/{ok.get('ram_total_mb','?')}MB[/]"
+                    f"[dim]Last OK: RAM {ok.get('ram_used_gb','?')}/{ok.get('ram_total_gb','?')}GB[/]"
                 )
             else:
-                self.update(f"[bold yellow]Jetson GPU:[/]\n[red]{data['error']}[/]")
+                self.update(f"[bold magenta]Mac Studio M2:[/]\n[red]{data['error']}[/]")
             return
 
-        # happy path
-        gpu = data.get("gpu_util", "N/A")
-        ram_used = data.get("ram_used_mb", "N/A")
-        ram_total = data.get("ram_total_mb", "N/A")
+        ram_used = data.get("ram_used_gb", "N/A")
+        ram_total = data.get("ram_total_gb", "N/A")
+        ram_pct = data.get("ram_percent", "N/A")
+        swap = data.get("swap_used_gb", 0)
+        gpu = data.get("gpu_status", "N/A")
         ts = data.get("timestamp", "")
+
         self.update(
-            "[bold yellow]Jetson GPU:[/]\n"
-            f"GPU: {gpu}%\n"
-            f"RAM: {ram_used}/{ram_total}MB\n"
+            "[bold magenta]Mac Studio M2:[/]\n"
+            f"RAM: {ram_used}/{ram_total}GB ({ram_pct}%)\n"
+            f"Swap: {swap}GB\n"
+            f"GPU: {gpu}\n"
             f"[dim]Updated {ts}[/]"
         )
 
@@ -150,7 +143,6 @@ class DashboardApp(App):
     CSS_PATH = "dashboard.tcss"
 
     def __init__(self):
-        self.jetson_ip = "192.168.1.205"
         self._log_lines = []
         super().__init__()
 
@@ -165,7 +157,7 @@ class DashboardApp(App):
     def compose(self) -> ComposeResult:
         self.metrics_widget = MetricsWidget("Local CPU/MEM", self.local_metrics)
         self.sim_widget = MetricsWidget("Sim Reversibility", self.sim_stats)
-        self.jetson_widget = JetsonWidget(self.jetson_ip)
+        self.mac_studio_widget = MacStudioWidget()
         self.thresholds = ThresholdsTable()
         self.rollout = RolloutStatus()
         self.live_fire_btn = Button("Run Live Fire", id="live_fire")
@@ -178,7 +170,7 @@ class DashboardApp(App):
                 classes="col",
             ),
             VerticalScroll(
-                self.jetson_widget,
+                self.mac_studio_widget,
                 self.thresholds,
                 self.rollout,
                 classes="col",
@@ -224,7 +216,7 @@ class DashboardApp(App):
     def update_all(self):
         self.metrics_widget.update_data()
         self.sim_widget.update_data()
-        self.jetson_widget.update_data()
+        self.mac_studio_widget.update_data()
         self.rollout.update_data()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
