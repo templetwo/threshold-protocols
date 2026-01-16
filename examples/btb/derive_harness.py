@@ -26,7 +26,12 @@ sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 
-from examples.btb.coherence_v1 import Coherence
+# Import from BTB package
+try:
+    from back_to_the_basics import Coherence
+except ImportError:
+    from coherence import Coherence  # type: ignore
+
 from utils.circuit import ThresholdCircuit
 from detection.threshold_detector import ThresholdDetector
 from sandbox.sandbox_manager import SandboxManager

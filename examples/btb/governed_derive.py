@@ -69,8 +69,13 @@ from intervention.intervenor import (
     EnforcementResult
 )
 
-# Import BTB Coherence Engine
-from examples.btb.coherence_v1 import Coherence
+# Import BTB Coherence Engine (from BTB package)
+try:
+    # Try package import first
+    from back_to_the_basics import Coherence
+except ImportError:
+    # Fallback to direct module import (when running from BTB repo)
+    from coherence import Coherence  # type: ignore
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("governed_derive")

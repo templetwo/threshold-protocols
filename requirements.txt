@@ -2,6 +2,7 @@
 # ================================
 
 # Core
+back-to-the-basics>=0.2.0  # Filesystem-as-circuit engine (for BTB integration)
 pyyaml>=6.0.1          # Configuration parsing
 python-json-logger>=2.0.7  # Structured logging
 
