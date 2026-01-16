@@ -108,31 +108,53 @@ threshold-protocols/
 
 ## Milestones
 
-### Phase 1: Foundation (Current)
+### Phase 1: Foundation ✓ Completed
 - [x] Repository structure
 - [x] Sandbox layer prototype
 - [x] Detection layer with BTB example
-- [ ] Interface verification tests
+- [x] Interface verification tests (89 tests passing)
 
-### Phase 2: Deliberation
-- [ ] Session facilitator with dissent preservation
-- [ ] Multi-stakeholder templates
-- [ ] Decision artifact generation
+### Phase 2: Circuit Closure ✓ Completed
+- [x] Session facilitator with dissent preservation
+- [x] Multi-stakeholder templates
+- [x] Decision artifact generation
+- [x] Simulation layer (Monte Carlo prediction engine)
+- [x] Intervention layer (gate-based enforcement)
+- [x] Event bus inter-layer communication
+- [x] Hash-chained audit trails
 
-### Phase 3: Integration
-- [ ] Full circuit closure (detection → intervention)
-- [ ] External audit verification
-- [ ] Multi-AI governance extensions
+### Phase 3: Integration ✓ Completed
+- [x] Full circuit closure (detection → simulation → deliberation → intervention)
+- [x] BTB governed derive implementation (examples/btb/governed_derive.py)
+- [x] Live fire testing with 100-file chaos scenarios
+- [x] Multi-model collaboration framework (Claude, Gemini, Grok)
+- [x] Self-governance implementation (self_governance.yaml)
+
+### Phase 4: Current State
+- [x] 89/89 tests passing
+- [x] Framework self-applies its own governance protocols
+- [x] Momentum detection (growth_rate metric)
+- [x] Jetson deployment configuration
+- [ ] External audit verification (pending)
+- [ ] Public release preparation
 
 ## Open Questions
 
-This framework does not yet answer:
+### Answered
+3. **Can the framework self-apply—detect thresholds in its own development?** ✓
+   - Answer: Yes. See `self_governance.yaml` for implementation
+   - The framework monitors its own: code complexity, test coverage, documentation drift, dependency creep, self-modification patterns, and gate bypass attempts
+   - Meta-governance: This config itself requires deliberation to modify
+
+### Active Questions
+
+This framework does not yet fully answer:
 
 1. How to scale deliberation for global, distributed stakeholders without collapsing to majority rule?
 2. What metrics define "thresholds" in emergent paradigms we haven't foreseen?
-3. Can the framework self-apply—detect thresholds in its own development?
-4. How to enforce adoption in open-source forks?
-5. What if human oversight introduces biases that AI autonomy might mitigate?
+3. How to enforce adoption in open-source forks?
+4. What if human oversight introduces biases that AI autonomy might mitigate?
+5. How do we balance transparency requirements with intellectual property in commercial deployments?
 
 These are not failures. They are the frontier.
 

@@ -1,6 +1,6 @@
 /* dashboard.tcss - Textual CSS */
 Screen {
-  background: $primary;
+  background: $background;
 }
 
 .main {
@@ -12,8 +12,8 @@ Screen {
   width: 1fr;
   margin: 1;
   padding: 1;
-  background: $background 50%;
-  border: round $secondary;
+  background: $panel;
+  border: round $primary;
 }
 
 DataTable {
@@ -21,9 +21,17 @@ DataTable {
 }
 
 Static {
-  height: 20%;
-  content-align: center middle;
+  height: auto;
+  padding: 1 2;
   background: $surface;
+  content-align: left top;
+}
+
+.log {
+  height: 8;
+  margin: 0 1 1 1;
+  border: round $secondary;
+  background: $panel;
 }
 
 .footer {

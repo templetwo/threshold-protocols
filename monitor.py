@@ -7,6 +7,16 @@ import yaml
 import json
 from pathlib import Path
 import os
+import re
+import traceback
+from datetime import datetime
+
+SSH_BASE = ["ssh", "-T",
+            "-o", "BatchMode=yes",
+            "-o", "StrictHostKeyChecking=accept-new",
+            "-o", "ConnectTimeout=2",
+            "-o", "ServerAliveInterval=2",
+            "-o", "ServerAliveCountMax=1"]
 
 
 class MetricsWidget(Static):
@@ -23,27 +33,83 @@ class MetricsWidget(Static):
 class JetsonWidget(Static):
     def __init__(self, ip):
         self.ip = ip
+        self.last_ok = None
+        self.last_err = None
         super().__init__(name=f"jetson-{ip}")
+
+    def _ssh(self, remote_cmd: str, timeout: int = 3) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            SSH_BASE + [f"tony@{self.ip}", remote_cmd],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            stdin=subprocess.DEVNULL,
+        )
+
+    def _parse_tegrastats(self, line: str):
+        # Typical snippet contains: "RAM 1234/7852MB ... GR3D_FREQ 45% ..."
+        ram = re.search(r"RAM\s+(\d+)\s*/\s*(\d+)MB", line)
+        gr3d = re.search(r"GR3D_FREQ\s+(\d+)%", line)
+        out = {}
+        if ram:
+            out["ram_used_mb"] = int(ram.group(1))
+            out["ram_total_mb"] = int(ram.group(2))
+        if gr3d:
+            out["gpu_util"] = int(gr3d.group(1))
+        return out
 
     def get_jetson(self):
         try:
-            gpu = subprocess.run(
-                [
-                    "ssh",
-                    f"tony@{self.ip}",
-                    "nvidia-smi --query-gpu=utilization.gpu,memory.used --format=csv,noheader,nounits",
-                ],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            ).stdout.strip()
-            return gpu.split(", ") if gpu else "Unreachable"
-        except:
-            return "Error"
+            # Use tegrastats (Jetson-friendly). One sample, one line.
+            p = self._ssh("tegrastats --interval 1000 --count 1 | head -n 1", timeout=4)
+            if p.returncode != 0:
+                err = (p.stderr or p.stdout or "").strip().splitlines()[:1]
+                msg = err[0] if err else f"ssh failed (code {p.returncode})"
+                self.last_err = msg
+                return {"error": msg}
+
+            line = (p.stdout or "").strip()
+            parsed = self._parse_tegrastats(line)
+            if not parsed:
+                # tegrastats returned, but format unexpected
+                self.last_err = "tegrastats parse failed"
+                return {"error": "tegrastats parse failed", "raw": line[:120]}
+
+            parsed["timestamp"] = datetime.now().strftime("%H:%M:%S")
+            self.last_ok = parsed
+            self.last_err = None
+            return parsed
+        except Exception as e:
+            self.last_err = f"{type(e).__name__}: {str(e)[:80]}"
+            return {"error": self.last_err}
 
     def update_data(self):
         data = self.get_jetson()
-        self.update(f"[bold yellow]Jetson GPU:[/]\n{data}")
+        if isinstance(data, dict) and "error" in data:
+            # show last known good if we have it
+            if self.last_ok:
+                ok = self.last_ok
+                self.update(
+                    "[bold yellow]Jetson GPU:[/]\n"
+                    f"[red]{data['error']}[/]\n\n"
+                    f"[dim]Last OK {ok.get('timestamp','?')}: GPU {ok.get('gpu_util','?')}% | "
+                    f"RAM {ok.get('ram_used_mb','?')}/{ok.get('ram_total_mb','?')}MB[/]"
+                )
+            else:
+                self.update(f"[bold yellow]Jetson GPU:[/]\n[red]{data['error']}[/]")
+            return
+
+        # happy path
+        gpu = data.get("gpu_util", "N/A")
+        ram_used = data.get("ram_used_mb", "N/A")
+        ram_total = data.get("ram_total_mb", "N/A")
+        ts = data.get("timestamp", "")
+        self.update(
+            "[bold yellow]Jetson GPU:[/]\n"
+            f"GPU: {gpu}%\n"
+            f"RAM: {ram_used}/{ram_total}MB\n"
+            f"[dim]Updated {ts}[/]"
+        )
 
 
 class ThresholdsTable(DataTable):
@@ -85,7 +151,16 @@ class DashboardApp(App):
 
     def __init__(self):
         self.jetson_ip = "192.168.1.205"
+        self._log_lines = []
         super().__init__()
+
+    def log_line(self, msg: str):
+        self._log_lines.append(msg)
+        self._log_lines = self._log_lines[-8:]
+        try:
+            self.log_widget.update("\n".join(self._log_lines))
+        except Exception:
+            pass
 
     def compose(self) -> ComposeResult:
         self.metrics_widget = MetricsWidget("Local CPU/MEM", self.local_metrics)
@@ -94,6 +169,7 @@ class DashboardApp(App):
         self.thresholds = ThresholdsTable()
         self.rollout = RolloutStatus()
         self.live_fire_btn = Button("Run Live Fire", id="live_fire")
+        self.log_widget = Static("[dim]log: (errors + events)[/]", id="log")
         yield Header(show_clock=True)
         yield Horizontal(
             VerticalScroll(
@@ -109,6 +185,7 @@ class DashboardApp(App):
             ),
             classes="main",
         )
+        yield VerticalScroll(self.log_widget, classes="log")
         yield Container(self.live_fire_btn, classes="footer")
         yield Footer()
 
@@ -137,7 +214,9 @@ class DashboardApp(App):
             else:
                 return "No outcomes\n"
         except Exception as e:
-            return f"Sim Error: {str(e)[:20]}"
+            self.log_line(f"[SIM] {type(e).__name__}: {str(e)}")
+            # keep the UI readable, log has the details
+            return f"Sim Error: {type(e).__name__}"
 
     def on_mount(self):
         self.set_interval(2, self.update_all)
@@ -165,8 +244,13 @@ class DashboardApp(App):
                     timeout=30,
                 )
                 self.live_fire_btn.label = "Live Fire Done"
+                if result.stdout:
+                    self.log_line(f"[LIVEFIRE] {result.stdout.strip()[:140]}")
+                if result.stderr:
+                    self.log_line(f"[LIVEFIRE-ERR] {result.stderr.strip()[:140]}")
             except Exception as e:
                 self.live_fire_btn.label = f"Error: {str(e)[:10]}"
+                self.log_line(f"[LIVEFIRE] {type(e).__name__}: {str(e)}")
 
 
 if __name__ == "__main__":
