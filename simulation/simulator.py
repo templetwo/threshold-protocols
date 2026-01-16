@@ -36,11 +36,13 @@ from pathlib import Path
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor
+import asyncio
 import multiprocessing as mp
 
 try:
     import networkx as nx
+
     NETWORKX_AVAILABLE = True
 except ImportError:
     NETWORKX_AVAILABLE = False
@@ -52,22 +54,24 @@ logger = logging.getLogger("simulation")
 
 class ScenarioType(Enum):
     """Types of scenarios to simulate."""
-    REORGANIZE = "reorganize"           # Full reorganization
-    PARTIAL_REORGANIZE = "partial"      # Limited scope reorganization
-    DEFER = "defer"                     # No action, observe
-    ROLLBACK = "rollback"               # Revert to previous state
-    INCREMENTAL = "incremental"         # Small, staged changes
+
+    REORGANIZE = "reorganize"  # Full reorganization
+    PARTIAL_REORGANIZE = "partial"  # Limited scope reorganization
+    DEFER = "defer"  # No action, observe
+    ROLLBACK = "rollback"  # Revert to previous state
+    INCREMENTAL = "incremental"  # Small, staged changes
 
 
 @dataclass
 class Outcome:
     """A single simulated outcome."""
+
     scenario: ScenarioType
     name: str
-    probability: float          # 0.0 to 1.0
-    reversibility: float        # 0.0 to 1.0 (1.0 = fully reversible)
+    probability: float  # 0.0 to 1.0
+    reversibility: float  # 0.0 to 1.0 (1.0 = fully reversible)
     side_effects: List[str]
-    state_hash: str             # Hash of final state for verification
+    state_hash: str  # Hash of final state for verification
     confidence_interval: Tuple[float, float] = (0.0, 1.0)
     details: Dict[str, Any] = field(default_factory=dict)
 
@@ -85,8 +89,9 @@ class Prediction:
     This is the primary output—a structured set of outcomes
     that deliberation can use to make informed decisions.
     """
-    event_hash: str             # Hash of triggering event
-    model: str                  # Model used for simulation
+
+    event_hash: str  # Hash of triggering event
+    model: str  # Model used for simulation
     outcomes: List[Outcome]
     timestamp: str
     seed: int
@@ -98,13 +103,16 @@ class Prediction:
             self.prediction_hash = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        content = json.dumps({
-            "event_hash": self.event_hash,
-            "model": self.model,
-            "outcome_count": len(self.outcomes),
-            "seed": self.seed,
-            "timestamp": self.timestamp
-        }, sort_keys=True)
+        content = json.dumps(
+            {
+                "event_hash": self.event_hash,
+                "model": self.model,
+                "outcome_count": len(self.outcomes),
+                "seed": self.seed,
+                "timestamp": self.timestamp,
+            },
+            sort_keys=True,
+        )
         return hashlib.sha256(content.encode()).hexdigest()[:16]
 
     def to_dict(self) -> Dict[str, Any]:
@@ -115,7 +123,7 @@ class Prediction:
             "timestamp": self.timestamp,
             "seed": self.seed,
             "monte_carlo_runs": self.monte_carlo_runs,
-            "prediction_hash": self.prediction_hash
+            "prediction_hash": self.prediction_hash,
         }
 
     def to_json(self) -> str:
@@ -137,6 +145,7 @@ class Prediction:
 @dataclass
 class SimulationConfig:
     """Configuration for simulation runs."""
+
     monte_carlo_runs: int = 100
     max_workers: int = 4
     timeout_seconds: int = 60
@@ -157,7 +166,7 @@ class Simulator:
         self,
         model: str = "generic",
         seed: int = 42,
-        config: Optional[SimulationConfig] = None
+        config: Optional[SimulationConfig] = None,
     ):
         if not NETWORKX_AVAILABLE:
             raise ImportError("NetworkX required: pip install networkx")
@@ -175,7 +184,9 @@ class Simulator:
         self.graph: nx.DiGraph = nx.DiGraph()
         self._initial_state: Optional[nx.DiGraph] = None
 
-        logger.info(f"Simulator initialized: model={model}, seed={seed} (loaded {len(self._training_memories)} memories)")
+        logger.info(
+            f"Simulator initialized: model={model}, seed={seed} (loaded {len(self._training_memories)} memories)"
+        )
 
     def _load_training_data(self) -> List[Dict]:
         """Attempt to load historical memories for grounded simulation."""
@@ -183,6 +194,7 @@ class Simulator:
             # We add the examples dir to path for import
             sys.path.append(str(Path(__file__).parent.parent / "examples" / "btb"))
             import btb_training_data
+
             return btb_training_data.DEBUGGING_MEMORIES
         except (ImportError, AttributeError):
             logger.debug("No training data found, using heuristic defaults.")
@@ -192,20 +204,16 @@ class Simulator:
         """Derive success/failure ratios from memories."""
         if not self._training_memories:
             return {}
-            
+
         stats = {}
         outcomes = [m.get("outcome") for m in self._training_memories]
         if outcomes:
             success_count = outcomes.count("success")
             stats["global_success_rate"] = success_count / len(outcomes)
-            
+
         return stats
 
-    def model(
-        self,
-        event: Dict[str, Any],
-        scenarios: List[ScenarioType]
-    ) -> Prediction:
+    def model(self, event: Dict[str, Any], scenarios: List[ScenarioType]) -> Prediction:
         """
         Model outcomes for given scenarios.
 
@@ -239,7 +247,7 @@ class Simulator:
             outcomes=outcomes,
             timestamp=datetime.utcnow().isoformat(),
             seed=self.seed,
-            monte_carlo_runs=self.config.monte_carlo_runs
+            monte_carlo_runs=self.config.monte_carlo_runs,
         )
 
         logger.info(f"Prediction complete: {len(outcomes)} outcomes modeled")
@@ -290,28 +298,22 @@ class Simulator:
             self.graph.add_node("generic_state", metric=metric, value=value)
             self.graph.add_edge("root", "generic_state")
 
-    def _simulate_scenario(
+def _simulate_scenario(
         self,
         scenario: ScenarioType,
         event: Dict[str, Any]
     ) -> Outcome:
         """Simulate a single scenario using Monte Carlo runs."""
-        results = []
+        async def run_monte_carlo():
+            loop = asyncio.get_event_loop()
+            with ProcessPoolExecutor(max_workers=self.config.max_workers) as executor:
+                tasks = [
+                    loop.run_in_executor(executor, self._run_single_monte_carlo, scenario, run, event)
+                    for run in range(self.config.monte_carlo_runs)
+                ]
+                return await asyncio.gather(*tasks)
 
-        for run in range(self.config.monte_carlo_runs):
-            # Reset to initial state
-            self.graph = self._initial_state.copy()
-            run_seed = self.seed + run
-
-            # Apply scenario transformation
-            final_state, effects = self._apply_scenario(scenario, run_seed)
-            reversibility = self._calculate_reversibility(final_state)
-
-            results.append({
-                "reversibility": reversibility,
-                "effects": effects,
-                "state_hash": self._hash_state(final_state)
-            })
+        results = asyncio.run(run_monte_carlo())
 
         # Aggregate results
         avg_reversibility = sum(r["reversibility"] for r in results) / len(results)
@@ -339,10 +341,45 @@ class Simulator:
             }
         )
 
+    def _run_single_monte_carlo(self, scenario, run, event):
+        self.graph = self._initial_state.copy()
+        run_seed = self.seed + run
+        final_state, effects = self._apply_scenario(scenario, run_seed)
+        reversibility = self._calculate_reversibility(final_state)
+        return {
+            "reversibility": reversibility,
+            "effects": effects,
+            "state_hash": self._hash_state(final_state)
+        }
+
+        # Aggregate results
+        avg_reversibility = sum(r["reversibility"] for r in results) / len(results)
+        all_effects = list(set(e for r in results for e in r["effects"]))
+
+        # Calculate confidence interval for reversibility
+        reversibilities = sorted(r["reversibility"] for r in results)
+        ci_low = reversibilities[int(len(reversibilities) * 0.05)]
+        ci_high = reversibilities[int(len(reversibilities) * 0.95)]
+
+        # Estimate probability based on scenario characteristics
+        probability = self._estimate_probability(scenario, avg_reversibility, event)
+
+        return Outcome(
+            scenario=scenario,
+            name=self._scenario_name(scenario),
+            probability=probability,
+            reversibility=avg_reversibility,
+            side_effects=all_effects,
+            state_hash=results[0]["state_hash"],
+            confidence_interval=(ci_low, ci_high),
+            details={
+                "monte_carlo_runs": self.config.monte_carlo_runs,
+                "variance": self._calculate_variance(reversibilities),
+            },
+        )
+
     def _apply_scenario(
-        self,
-        scenario: ScenarioType,
-        run_seed: int
+        self, scenario: ScenarioType, run_seed: int
     ) -> Tuple[nx.DiGraph, List[str]]:
         """Apply scenario transformation to graph, grounded in memories."""
         rng = random.Random(run_seed)
@@ -354,17 +391,21 @@ class Simulator:
             # Pick a memory that matches the "vibe" of the scenario
             if scenario in [ScenarioType.ROLLBACK, ScenarioType.PARTIAL_REORGANIZE]:
                 # Failure-prone scenarios draw from failure memories
-                failures = [m for m in self._training_memories if m.get("outcome") == "failure"]
+                failures = [
+                    m for m in self._training_memories if m.get("outcome") == "failure"
+                ]
                 if failures:
                     mem = rng.choice(failures)
-                    effects.append(f"Memory Ref: {mem.get('summary', 'unknown_failure')}")
+                    effects.append(
+                        f"Memory Ref: {mem.get('summary', 'unknown_failure')}"
+                    )
 
         if scenario == ScenarioType.REORGANIZE:
             # Full reorganization: rewire graph structure
             nodes = list(state.nodes())
             if len(nodes) > 2:
                 # Remove some edges
-                edges_to_remove = list(state.edges())[:len(state.edges()) // 3]
+                edges_to_remove = list(state.edges())[: len(state.edges()) // 3]
                 state.remove_edges_from(edges_to_remove)
 
                 # Add new organizational edges
@@ -445,8 +486,12 @@ class Simulator:
         edges_removed = len(initial_edges - final_edges)
 
         total_operations = nodes_added + nodes_removed + edges_added + edges_removed
-        max_operations = len(initial_nodes) + len(final_nodes) + \
-                        len(initial_edges) + len(final_edges)
+        max_operations = (
+            len(initial_nodes)
+            + len(final_nodes)
+            + len(initial_edges)
+            + len(final_edges)
+        )
 
         if max_operations == 0:
             return 1.0
@@ -458,10 +503,7 @@ class Simulator:
         return reversibility
 
     def _estimate_probability(
-        self,
-        scenario: ScenarioType,
-        reversibility: float,
-        event: Dict[str, Any]
+        self, scenario: ScenarioType, reversibility: float, event: Dict[str, Any]
     ) -> float:
         """
         Estimate scenario probability based on characteristics and training data.
@@ -472,7 +514,7 @@ class Simulator:
             ScenarioType.PARTIAL_REORGANIZE: 0.25,
             ScenarioType.DEFER: 0.2,
             ScenarioType.ROLLBACK: 0.1,
-            ScenarioType.INCREMENTAL: 0.15
+            ScenarioType.INCREMENTAL: 0.15,
         }
 
         prob = base_probs.get(scenario, 0.2)
@@ -481,10 +523,10 @@ class Simulator:
         success_rate = self._stats.get("global_success_rate", 0.5)
         if scenario in [ScenarioType.REORGANIZE, ScenarioType.INCREMENTAL]:
             # If historical success rate is high, these scenarios are more probable
-            prob *= (0.5 + success_rate)
+            prob *= 0.5 + success_rate
         else:
             # If historical success rate is low, defensive scenarios (DEFER/ROLLBACK) are more probable
-            prob *= (1.5 - success_rate)
+            prob *= 1.5 - success_rate
 
         # Adjust by severity
         severity = event.get("severity", "info")
@@ -492,12 +534,12 @@ class Simulator:
             "info": 1.0,
             "warning": 1.1,
             "critical": 1.3,
-            "emergency": 1.5
+            "emergency": 1.5,
         }
         prob *= severity_multipliers.get(severity, 1.0)
 
         # High reversibility scenarios are slightly more likely to be chosen
-        prob *= (0.8 + 0.4 * reversibility)
+        prob *= 0.8 + 0.4 * reversibility
 
         return min(prob, 1.0)
 
@@ -508,7 +550,7 @@ class Simulator:
             ScenarioType.PARTIAL_REORGANIZE: "Partial Reorganization",
             ScenarioType.DEFER: "Defer Action",
             ScenarioType.ROLLBACK: "Rollback to Previous",
-            ScenarioType.INCREMENTAL: "Incremental Changes"
+            ScenarioType.INCREMENTAL: "Incremental Changes",
         }
         return names.get(scenario, scenario.value)
 
@@ -517,6 +559,18 @@ class Simulator:
         # Use sorted adjacency for determinism
         adj_str = str(sorted(state.edges()))
         return hashlib.sha256(adj_str.encode()).hexdigest()[:16]
+
+    def _single_monte_run(self, scenario, run, event):
+        # Recreate state for process safety (no shared self.graph)
+        self.graph = self._initial_state.copy() if self._initial_state else nx.DiGraph()
+        run_seed = self.seed + run
+        final_state, effects = self._apply_scenario(scenario, run_seed)
+        reversibility = self._calculate_reversibility(final_state)
+        return {
+            "reversibility": reversibility,
+            "effects": effects,
+            "state_hash": self._hash_state(final_state)
+        }
 
     def _calculate_variance(self, values: List[float]) -> float:
         """Calculate variance of values."""
@@ -553,15 +607,15 @@ if __name__ == "__main__":
             "threshold": 80,
             "severity": "critical",
             "path": "/test/_intake",
-            "event_hash": "test123"
+            "event_hash": "test123",
         }
 
     config = SimulationConfig(monte_carlo_runs=args.runs, seed=args.seed)
     simulator = Simulator(model=args.model, seed=args.seed, config=config)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("🎲 THRESHOLD PROTOCOL SIMULATOR")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Model: {args.model}")
     print(f"Seed: {args.seed}")
     print(f"Monte Carlo runs: {args.runs}")
@@ -570,20 +624,22 @@ if __name__ == "__main__":
         ScenarioType.REORGANIZE,
         ScenarioType.PARTIAL_REORGANIZE,
         ScenarioType.DEFER,
-        ScenarioType.INCREMENTAL
+        ScenarioType.INCREMENTAL,
     ]
 
     prediction = simulator.model(event, scenarios)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("📊 PREDICTION RESULTS")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     for outcome in sorted(prediction.outcomes, key=lambda o: -o.probability):
         print(f"\n📈 {outcome.name}")
         print(f"   Probability: {outcome.probability:.1%}")
-        print(f"   Reversibility: {outcome.reversibility:.1%} "
-              f"(CI: {outcome.confidence_interval[0]:.1%}-{outcome.confidence_interval[1]:.1%})")
+        print(
+            f"   Reversibility: {outcome.reversibility:.1%} "
+            f"(CI: {outcome.confidence_interval[0]:.1%}-{outcome.confidence_interval[1]:.1%})"
+        )
         if outcome.side_effects:
             print(f"   Side Effects: {', '.join(outcome.side_effects)}")
 

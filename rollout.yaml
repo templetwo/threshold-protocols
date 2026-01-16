@@ -1,0 +1,22 @@
+phases:
+  - name: Perf
+    tasks:
+      - optimize_dag: true
+      - add_asyncio: true
+      - benchmark: {target: 0.9s, runs: 50}
+    criteria: {speedup: 3x, safety_checks: pass}
+  - name: Safety
+    tasks:
+      - red_team: {scenarios: 1000, chaos_level: high}
+      - validate_metrics: {entropy: calibrated, self_ref: enhanced}
+    criteria: {regressions: 0, coverage: 100%}
+  - name: Scale
+    tasks:
+      - monte_carlo: {iterations: 200, seeds: fixed}
+      - jetson_deploy: true
+    criteria: {latency_jetson: <2s, audits: tamper_evident}
+stakeholders:
+  - role: Reviewer
+    required: 2/3 approval
+open_questions:
+  - How to handle international forks?
