@@ -1,0 +1,36 @@
+/* dashboard.tcss - Textual CSS */
+Screen {
+  background: $primary;
+}
+
+.main {
+  height: 100%;
+  width: 100%;
+}
+
+.col {
+  width: 1fr;
+  margin: 1;
+  padding: 1;
+  background: $background 50%;
+  border: round $secondary;
+}
+
+DataTable {
+  height: 40%;
+}
+
+Static {
+  height: 20%;
+  content-align: center middle;
+  background: $surface;
+}
+
+.footer {
+  height: 5%;
+  align: center middle;
+}
+
+Button {
+  background: $primary;
+}

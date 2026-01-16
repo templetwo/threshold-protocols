@@ -298,70 +298,32 @@ class Simulator:
             self.graph.add_node("generic_state", metric=metric, value=value)
             self.graph.add_edge("root", "generic_state")
 
-def _simulate_scenario(
-        self,
-        scenario: ScenarioType,
-        event: Dict[str, Any]
+    def _simulate_scenario(
+        self, scenario: ScenarioType, event: Dict[str, Any]
     ) -> Outcome:
         """Simulate a single scenario using Monte Carlo runs."""
-        async def run_monte_carlo():
+        try:
             loop = asyncio.get_event_loop()
-            with ProcessPoolExecutor(max_workers=self.config.max_workers) as executor:
-                tasks = [
-                    loop.run_in_executor(executor, self._run_single_monte_carlo, scenario, run, event)
-                    for run in range(self.config.monte_carlo_runs)
-                ]
-                return await asyncio.gather(*tasks)
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
 
-        results = asyncio.run(run_monte_carlo())
+        with ProcessPoolExecutor(max_workers=self.config.max_workers) as executor:
+            tasks = [
+                loop.run_in_executor(
+                    executor, self._run_single_monte_carlo, scenario, run, event
+                )
+                for run in range(self.config.monte_carlo_runs)
+            ]
+            results = loop.run_until_complete(asyncio.gather(*tasks))
 
-        # Aggregate results
         avg_reversibility = sum(r["reversibility"] for r in results) / len(results)
         all_effects = list(set(e for r in results for e in r["effects"]))
 
-        # Calculate confidence interval for reversibility
         reversibilities = sorted(r["reversibility"] for r in results)
         ci_low = reversibilities[int(len(reversibilities) * 0.05)]
         ci_high = reversibilities[int(len(reversibilities) * 0.95)]
 
-        # Estimate probability based on scenario characteristics
-        probability = self._estimate_probability(scenario, avg_reversibility, event)
-
-        return Outcome(
-            scenario=scenario,
-            name=self._scenario_name(scenario),
-            probability=probability,
-            reversibility=avg_reversibility,
-            side_effects=all_effects,
-            state_hash=results[0]["state_hash"],
-            confidence_interval=(ci_low, ci_high),
-            details={
-                "monte_carlo_runs": self.config.monte_carlo_runs,
-                "variance": self._calculate_variance(reversibilities)
-            }
-        )
-
-    def _run_single_monte_carlo(self, scenario, run, event):
-        self.graph = self._initial_state.copy()
-        run_seed = self.seed + run
-        final_state, effects = self._apply_scenario(scenario, run_seed)
-        reversibility = self._calculate_reversibility(final_state)
-        return {
-            "reversibility": reversibility,
-            "effects": effects,
-            "state_hash": self._hash_state(final_state)
-        }
-
-        # Aggregate results
-        avg_reversibility = sum(r["reversibility"] for r in results) / len(results)
-        all_effects = list(set(e for r in results for e in r["effects"]))
-
-        # Calculate confidence interval for reversibility
-        reversibilities = sorted(r["reversibility"] for r in results)
-        ci_low = reversibilities[int(len(reversibilities) * 0.05)]
-        ci_high = reversibilities[int(len(reversibilities) * 0.95)]
-
-        # Estimate probability based on scenario characteristics
         probability = self._estimate_probability(scenario, avg_reversibility, event)
 
         return Outcome(
@@ -377,6 +339,19 @@ def _simulate_scenario(
                 "variance": self._calculate_variance(reversibilities),
             },
         )
+
+    def _run_single_monte_carlo(self, scenario, run, event):
+        """Stateless for parallel safety."""
+        graph = nx.DiGraph()
+        graph.add_node("root", type="directory")
+        run_seed = self.seed + run
+        final_state, effects = self._apply_scenario(scenario, run_seed)
+        reversibility = self._calculate_reversibility(final_state)
+        return {
+            "reversibility": reversibility,
+            "effects": effects,
+            "state_hash": self._hash_state(final_state),
+        }
 
     def _apply_scenario(
         self, scenario: ScenarioType, run_seed: int
@@ -569,7 +544,7 @@ def _simulate_scenario(
         return {
             "reversibility": reversibility,
             "effects": effects,
-            "state_hash": self._hash_state(final_state)
+            "state_hash": self._hash_state(final_state),
         }
 
     def _calculate_variance(self, values: List[float]) -> float:
