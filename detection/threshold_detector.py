@@ -196,9 +196,32 @@ class ThresholdDetector:
 
         events: List[ThresholdEvent] = []
         timestamp = datetime.utcnow().isoformat()
+        
+        # Load previous state for momentum calculation
+        previous_state = self._load_state(path)
 
         # Gather metrics
         metrics = self._gather_metrics(path, recursive)
+        
+        # Compute Growth Rate (Momentum)
+        if MetricType.FILE_COUNT in metrics:
+            current_count = metrics[MetricType.FILE_COUNT]["value"]
+            growth_rate = self._compute_growth_rate(current_count, timestamp, previous_state)
+            
+            metrics[MetricType.GROWTH_RATE] = {
+                "value": growth_rate,
+                "details": {
+                    "current_count": current_count,
+                    "previous_count": previous_state.get("file_count", 0) if previous_state else 0,
+                    "files_per_second": growth_rate
+                }
+            }
+            
+            # Save new state
+            self._save_state(path, {
+                "file_count": current_count,
+                "timestamp": timestamp
+            })
 
         # Check each threshold
         for metric_type, config in self.thresholds.items():
@@ -229,6 +252,67 @@ class ThresholdDetector:
                 logger.info(f"Threshold event: {metric_type.value}={value} [{severity.value}]")
 
         return events
+
+    def _load_state(self, path: Path) -> Optional[Dict[str, Any]]:
+        """Load detector state from target directory."""
+        state_path = path / ".threshold_state.json"
+        if not state_path.exists():
+            return None
+        try:
+            with open(state_path) as f:
+                return json.load(f)
+        except Exception:
+            return None
+
+    def _save_state(self, path: Path, state: Dict[str, Any]) -> None:
+        """Save detector state to target directory."""
+        state_path = path / ".threshold_state.json"
+        try:
+            with open(state_path, "w") as f:
+                json.dump(state, f)
+        except Exception as e:
+            logger.debug(f"Failed to save state: {e}")
+
+    def _compute_growth_rate(
+        self, 
+        current_count: int, 
+        current_timestamp: str, 
+        previous_state: Optional[Dict[str, Any]]
+    ) -> float:
+        """
+        Compute rate of change (files per second).
+        Momentum = d(Files)/dt
+        """
+        if not previous_state:
+            return 0.0
+            
+        prev_count = previous_state.get("file_count", 0)
+        prev_time_str = previous_state.get("timestamp")
+        
+        if not prev_time_str:
+            return 0.0
+            
+        try:
+            curr_time = datetime.fromisoformat(current_timestamp)
+            prev_time = datetime.fromisoformat(prev_time_str)
+            
+            delta_seconds = (curr_time - prev_time).total_seconds()
+            
+            if delta_seconds <= 0:
+                return 0.0
+                
+            delta_files = current_count - prev_count
+            
+            # Only report positive growth (momentum)
+            # If files were deleted (negative growth), we usually don't alarm, 
+            # unless we add a DELETION_RATE metric later.
+            if delta_files <= 0:
+                return 0.0
+                
+            return delta_files / delta_seconds
+            
+        except ValueError:
+            return 0.0
 
     def _gather_metrics(self, path: Path, recursive: bool) -> Dict[MetricType, Dict[str, Any]]:
         """Gather all metrics for the given path."""

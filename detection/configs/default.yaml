@@ -57,7 +57,15 @@ thresholds:
     warning_ratio: 0.5
     description: "Reflex trigger patterns detected - review automation scope"
 
+  # Growth Rate (Momentum)
+  # ----------------------
+  # Triggers when file creation velocity is high (files per second).
+  # High momentum indicates rapid, potentially uncontrolled expansion.
+  - metric: growth_rate
+    limit: 10.0
+    warning_ratio: 0.5
+    description: "System momentum high - rapid file creation detected"
+
 # Future metrics (not yet implemented):
-# - growth_rate: Rate of file/directory creation over time
 # - connection_count: Network connections opened by monitored processes
 # - memory_growth: Memory usage trend
