@@ -1,0 +1,117 @@
+# BTB Five Dimensions Template
+# =============================
+#
+# This template captures the evaluation framework used in BTB's
+# Threshold Pause deliberation. It examines five key dimensions
+# that determine whether autonomous behavior should proceed.
+#
+# Origin: THE_THRESHOLD_PAUSE.md from Back to the Basics project
+
+name: BTB Five Dimensions
+description: |
+  Evaluation framework from BTB's Threshold Pause.
+  Examines legibility, reversibility, auditability, governance,
+  and paradigm safety to determine if autonomous action should proceed.
+
+required_stakeholder_types:
+  - technical  # Must have someone who understands the system
+  - ethical    # Must have someone focused on broader implications
+
+dimensions:
+  - name: legibility
+    question: "Can humans understand the resulting structure?"
+    weight: 0.25
+    guidance: |
+      Consider:
+      - Will the filesystem remain navigable by humans?
+      - Can someone unfamiliar with the system understand the organization?
+      - Are naming conventions semantic and meaningful?
+      - Is the structure self-documenting?
+
+      Warning signs:
+      - Generated names without semantic meaning
+      - Deep hierarchies that require tooling to navigate
+      - Organizational logic that only makes sense to the algorithm
+
+  - name: reversibility
+    question: "Can changes be undone if problems emerge?"
+    weight: 0.25
+    guidance: |
+      Consider:
+      - Is there a clear rollback path?
+      - Are original locations preserved or logged?
+      - Can we reconstruct the pre-change state?
+      - What is the cost of reversal?
+
+      Warning signs:
+      - Destructive operations (deletion, overwriting)
+      - Loss of metadata or history
+      - Dependencies that make rollback cascade
+      - Time-bounded reversibility (can only undo within X days)
+
+  - name: auditability
+    question: "Can we trace why decisions were made?"
+    weight: 0.20
+    guidance: |
+      Consider:
+      - Are reorganization decisions logged?
+      - Can we replay the decision process?
+      - Is the reasoning accessible to non-experts?
+      - Are logs tamper-evident?
+
+      Warning signs:
+      - Silent operations with no logging
+      - Logs that only record what, not why
+      - Opaque decision criteria
+      - Logs stored in the system being reorganized
+
+  - name: governance
+    question: "Who has authority over the system?"
+    weight: 0.15
+    guidance: |
+      Consider:
+      - Can humans override automatic decisions?
+      - Who can modify the reorganization rules?
+      - Is there a clear escalation path?
+      - Are changes to governance itself audited?
+
+      Warning signs:
+      - No override mechanism
+      - Self-modification of governance rules
+      - Single point of control
+      - Governance changes that don't require deliberation
+
+  - name: paradigm_safety
+    question: "Does this create risks if widely adopted?"
+    weight: 0.15
+    guidance: |
+      Consider:
+      - What if every AI system used this approach?
+      - Does this establish precedents we'd regret?
+      - Are we creating tools that could be misused?
+      - Does this concentrate or distribute power?
+
+      Warning signs:
+      - Capabilities that primarily benefit bad actors
+      - Erosion of human oversight as precedent
+      - Lock-in to particular vendors or approaches
+      - Acceleration without corresponding safety improvements
+
+# Scoring guidance
+scoring:
+  0.0: "Completely fails this dimension"
+  0.25: "Significant concerns, would need major changes"
+  0.5: "Partial satisfaction, concerns remain"
+  0.75: "Mostly satisfied, minor concerns"
+  1.0: "Fully satisfies this dimension"
+
+# Decision thresholds
+thresholds:
+  proceed: 0.75      # Weighted average must exceed this
+  pause: 0.5         # Below this, recommend pause
+  reject: 0.25       # Below this, recommend rejection
+
+  # Individual dimension minimums (any below these triggers pause)
+  minimums:
+    reversibility: 0.5   # Cannot proceed without rollback capability
+    governance: 0.4      # Cannot proceed without human override

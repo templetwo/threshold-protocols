@@ -1,0 +1,36 @@
+# Threshold-Protocols Dependencies
+# ================================
+
+# Core
+pyyaml>=6.0.1          # Configuration parsing
+python-json-logger>=2.0.7  # Structured logging
+
+# Sandbox Layer
+docker>=7.0.0          # Container management (optional - graceful fallback if unavailable)
+
+# Detection Layer
+watchdog>=4.0.0        # Filesystem monitoring
+psutil>=5.9.0          # System metrics
+
+# Simulation Layer
+networkx>=3.2          # Graph-based modeling
+numpy>=1.26.0          # Numerical operations
+
+# Deliberation Layer
+# (No external deps - uses stdlib for portability)
+
+# Intervention Layer
+filelock>=3.13.0       # Safe file operations
+hashlib                # Built-in - tamper-evident hashing
+
+# Testing
+pytest>=8.0.0          # Test framework
+pytest-cov>=4.1.0      # Coverage reporting
+
+# Optional: Advanced Simulation
+# torch>=2.0.0         # Uncomment for PyTorch-based swarm models
+# scipy>=1.11.0        # Uncomment for advanced statistical modeling
+
+# Development
+black>=24.1.0          # Code formatting
+mypy>=1.8.0            # Type checking

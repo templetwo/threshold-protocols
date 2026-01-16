@@ -1,0 +1,168 @@
+# Self-Governance Configuration
+# ==============================
+#
+# This file applies threshold-protocols to its own development.
+# The framework that governs AI systems should govern itself.
+#
+# "Can the framework self-apply—i.e., detect thresholds in its own development?"
+# — Open question from the original design
+#
+# Answer: Yes. This is how.
+
+name: threshold-protocols-self-governance
+version: "1.0"
+description: |
+  Applies threshold detection to the threshold-protocols repository itself.
+  Detects when development is approaching autonomy boundaries that would
+  require deliberation before proceeding.
+
+# Thresholds for the codebase itself
+thresholds:
+  # Code complexity
+  # ---------------
+  # Triggers when any module becomes too complex to maintain
+  - metric: lines_per_module
+    threshold: 500
+    warning_ratio: 0.8
+    description: "Module exceeds maintainable size - consider splitting"
+    action: pause_merge
+
+  # Test coverage gap
+  # -----------------
+  # Triggers when code is added without corresponding tests
+  - metric: untested_functions
+    threshold: 5
+    warning_ratio: 0.6
+    description: "Functions added without tests - testing required"
+    action: require_tests
+
+  # Documentation drift
+  # -------------------
+  # Triggers when implementation diverges from documentation
+  - metric: doc_implementation_mismatch
+    threshold: 3  # Number of significant discrepancies
+    warning_ratio: 0.5
+    description: "Documentation out of sync with implementation"
+    action: pause_merge
+
+  # Dependency creep
+  # ----------------
+  # Triggers when too many external dependencies are added
+  - metric: new_dependencies
+    threshold: 3  # Per release
+    warning_ratio: 0.7
+    description: "Dependency count increasing - review necessity"
+    action: require_deliberation
+
+  # Self-modification patterns
+  # --------------------------
+  # Triggers when the framework gains self-modifying capabilities
+  - metric: self_reference_count
+    threshold: 10
+    warning_ratio: 0.5
+    description: "Framework approaching self-modification threshold"
+    action: require_multi_approve
+
+  # Gate bypass attempts
+  # --------------------
+  # Triggers if code attempts to circumvent gates
+  - metric: gate_bypass_patterns
+    threshold: 1
+    warning_ratio: 0.0  # Any attempt triggers
+    description: "CRITICAL: Gate bypass pattern detected"
+    action: reject_and_alert
+
+# Actions for each threshold type
+actions:
+  pause_merge:
+    type: gate
+    gate: PauseGate
+    requires: human_review
+    message: "Merge paused until threshold addressed"
+
+  require_tests:
+    type: gate
+    gate: ConditionCheckGate
+    conditions:
+      - all_new_functions_tested
+      - coverage_not_decreased
+    message: "Tests required before proceeding"
+
+  require_deliberation:
+    type: gate
+    gate: HumanApprovalGate
+    template: dependency_review
+    message: "Deliberation required on dependency changes"
+
+  require_multi_approve:
+    type: gate
+    gate: MultiApproveGate
+    required: 2
+    total: 3
+    stakeholder_types:
+      - technical
+      - ethical
+    message: "Multiple approvals required for self-modification capability"
+
+  reject_and_alert:
+    type: reject
+    alert: true
+    audit_level: critical
+    message: "Change rejected - gate bypass is architecturally prohibited"
+
+# Deliberation templates for self-governance
+templates:
+  dependency_review:
+    dimensions:
+      - name: necessity
+        question: "Is this dependency essential or convenient?"
+        weight: 0.3
+      - name: maintenance_burden
+        question: "What is the long-term maintenance cost?"
+        weight: 0.3
+      - name: security_surface
+        question: "Does this expand the attack surface?"
+        weight: 0.4
+
+  self_modification_review:
+    dimensions:
+      - name: scope_limitation
+        question: "Is the self-modification bounded in scope?"
+        weight: 0.35
+      - name: human_override
+        question: "Can humans override any self-modification?"
+        weight: 0.35
+      - name: audit_coverage
+        question: "Are all self-modifications logged and auditable?"
+        weight: 0.30
+
+# Excluded paths (don't apply thresholds to these)
+exclusions:
+  - tests/**           # Test files can be long
+  - docs/**            # Documentation isn't code
+  - examples/**        # Examples may be verbose for clarity
+  - "*.md"             # Markdown files
+  - self_governance.yaml  # This file (avoid infinite recursion)
+
+# Audit configuration
+audit:
+  path: intervention/logs/self_governance/
+  retention_days: 365
+  hash_chain: true
+  external_verification_required: true
+
+# Meta-governance note
+# --------------------
+# This configuration itself should be subject to deliberation when modified.
+# Changes to self_governance.yaml require:
+# 1. Technical review (does the change make sense?)
+# 2. Ethical review (does the change preserve the framework's integrity?)
+# 3. Audit (is the change logged?)
+#
+# The framework cannot grant itself exemptions from governance.
+# That would defeat the purpose.
+
+meta:
+  requires_deliberation_to_modify: true
+  minimum_approvers: 2
+  change_log_required: true

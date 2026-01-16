@@ -1,0 +1,63 @@
+# Default Threshold Configuration
+# ================================
+#
+# This configuration provides sensible defaults for general-purpose
+# threshold detection. Adjust limits based on your specific use case.
+#
+# Severity levels trigger at:
+# - INFO: 64% of limit (warning_ratio * 0.8)
+# - WARNING: 80% of limit (warning_ratio)
+# - CRITICAL: 100% of limit
+# - EMERGENCY: 150% of limit
+
+thresholds:
+  # File Count
+  # ----------
+  # Triggers when directory contains many files.
+  # High counts may indicate automated generation or poor organization.
+  - metric: file_count
+    limit: 100
+    warning_ratio: 0.8
+    description: "File count approaching threshold - consider reorganization"
+
+  # Directory Depth
+  # ---------------
+  # Triggers when directory tree becomes deeply nested.
+  # Deep hierarchies can indicate runaway organization schemes.
+  - metric: directory_depth
+    limit: 10
+    warning_ratio: 0.7
+    description: "Directory depth approaching threshold - structure may be over-engineered"
+
+  # Entropy
+  # -------
+  # Triggers when filename patterns suggest automated naming.
+  # Values close to 1.0 indicate random/generated names.
+  # Human-organized structures typically have lower entropy (0.4-0.7).
+  - metric: entropy
+    limit: 0.85
+    warning_ratio: 0.9
+    description: "Filename entropy high - possible automated file generation"
+
+  # Self-Reference
+  # --------------
+  # Triggers when files appear to reference or modify themselves.
+  # Common in self-modifying systems.
+  - metric: self_reference
+    limit: 5
+    warning_ratio: 0.6
+    description: "Self-referencing patterns detected - review for autonomous behavior"
+
+  # Reflex Patterns
+  # ---------------
+  # Triggers when files suggest automated response systems.
+  # Named after BTB's reflex.py concept.
+  - metric: reflex_pattern
+    limit: 3
+    warning_ratio: 0.5
+    description: "Reflex trigger patterns detected - review automation scope"
+
+# Future metrics (not yet implemented):
+# - growth_rate: Rate of file/directory creation over time
+# - connection_count: Network connections opened by monitored processes
+# - memory_growth: Memory usage trend

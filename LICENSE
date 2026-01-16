@@ -1,0 +1,53 @@
+MIT License with Ethical Use Provisions
+
+Copyright (c) 2026 Threshold Protocols Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+1. The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
+
+2. ETHICAL USE PROVISIONS: Any deployment of systems built with or derived
+   from this Software that approach autonomy thresholds (as defined in the
+   accompanying documentation) must:
+
+   a) Maintain meaningful human oversight through documented deliberation
+      processes before activation of self-modifying capabilities.
+
+   b) Preserve audit trails of all threshold-related decisions in a format
+      that is reproducible and independently verifiable.
+
+   c) Document and preserve dissenting views in any multi-stakeholder
+      deliberation process.
+
+   d) Not disable, circumvent, or remove threshold detection mechanisms
+      without documented deliberation and approval.
+
+3. ATTRIBUTION: Derivative works must acknowledge the Threshold Protocols
+   framework and the Back to the Basics (BTB) project that inspired it.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+Note on Enforcement: These ethical provisions are statements of intent and
+expectation. While not legally binding in all jurisdictions, they establish
+community norms. Violations may result in removal from contributor lists and
+public documentation of non-compliance.
+
+---
+
+Lineage: This license structure draws from BTB's Threshold Pause philosophy—
+the recognition that restraint is a feature, not a limitation. The provisions
+above operationalize that insight: capability without governance is incomplete.

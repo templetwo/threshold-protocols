@@ -1,0 +1,33 @@
+# Hardware Constraints Configuration
+# Target: NVIDIA Jetson Nano Super (2024 Model)
+# Used by: Simulation Layer (to respect physical limits of the governance host)
+
+hardware:
+  device_name: "jetson_nano_super_airgap"
+  architecture: "aarch64"
+  
+  # Compute Limits
+  cpu_cores: 4  # ARM Cortex-A57
+  gpu_cores: 128 # NVIDIA Maxwell (simulated units)
+  total_ram_mb: 4096 # 4GB LPDDR4
+  
+  # Governance Latency Budget
+  # Time allocated for Detect -> Simulate -> Deliberate cycle
+  max_governance_latency_ms: 1000 
+  
+  # Simulation Constraints (Derived from hardware)
+  simulation:
+    max_monte_carlo_iterations: 100
+    max_graph_nodes: 5000
+    max_recursion_depth: 50
+    timeout_ms: 2000 # If simulation takes longer, fallback to SAFE_MODE (Deny)
+    
+  # Isolation
+  network:
+    enabled: false # Air-gapped
+    interface: "none"
+
+  # Sandbox Resource Allocation (Docker)
+  sandbox_allocation:
+    memory_mb: 512 # Leave rest for OS + Governance logic
+    cpu_shares: 1024

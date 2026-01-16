@@ -1,0 +1,67 @@
+# Back to the Basics (BTB) Threshold Configuration
+# ================================================
+#
+# This configuration mirrors the thresholds that would have triggered
+# during BTB's derive.py development—the point at which the team paused.
+#
+# BTB Context:
+# - _intake directories accumulate files for processing
+# - derive.py would reorganize files automatically
+# - reflex.py would trigger responses to filesystem events
+# - The pause occurred when these systems approached self-organization
+#
+# This config simulates that threshold for demonstration and testing.
+
+thresholds:
+  # _intake accumulation threshold
+  # ------------------------------
+  # In BTB, _intake directories collect files for routing.
+  # When they exceed this limit, derive.py would reorganize them.
+  # This is the primary trigger point for the Threshold Pause.
+  - metric: file_count
+    limit: 100
+    warning_ratio: 0.8
+    description: "_intake accumulation threshold - derive.py trigger point"
+
+  # Directory depth (fractal routing)
+  # ---------------------------------
+  # BTB uses fractal routing for deep structures.
+  # Excessive depth indicates potential runaway organization.
+  - metric: directory_depth
+    limit: 8
+    warning_ratio: 0.75
+    description: "Fractal depth threshold - structure becoming self-similar"
+
+  # Entropy (naming pattern detection)
+  # ----------------------------------
+  # BTB generates semantic paths like _memory/context/recent/
+  # High entropy suggests deviation from semantic naming.
+  - metric: entropy
+    limit: 0.75
+    warning_ratio: 0.85
+    description: "Semantic naming drift - automated naming may be occurring"
+
+  # Self-reference (derive.py signature)
+  # ------------------------------------
+  # derive.py modifies its own configuration based on usage.
+  # This detects that self-modification pattern.
+  - metric: self_reference
+    limit: 3
+    warning_ratio: 0.5
+    description: "Self-modification patterns - derive.py behavior indicator"
+
+  # Reflex patterns (reflex.py detection)
+  # -------------------------------------
+  # BTB's reflex.py creates automatic responses to filesystem events.
+  # This threshold detects those patterns.
+  - metric: reflex_pattern
+    limit: 2
+    warning_ratio: 0.5
+    description: "Reflex triggers detected - automatic response system active"
+
+# BTB-specific metadata
+metadata:
+  project: "back-to-the-basics"
+  version: "simulated"
+  description: "Threshold configuration simulating BTB's derive.py pause point"
+  documentation: "https://github.com/templetwo/back-to-the-basics/blob/main/THE_THRESHOLD_PAUSE.md"
