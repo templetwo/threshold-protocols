@@ -26,6 +26,7 @@ References:
 - NetworkX for deterministic graph algorithms
 """
 
+import sys
 import json
 import random
 import hashlib
@@ -149,9 +150,7 @@ class Simulator:
     Uses NetworkX to represent system states as directed graphs,
     then simulates scenarios by applying transformations.
 
-    Usage:
-        simulator = Simulator(model="btb_reorganization")
-        prediction = simulator.model(event, scenarios=[...])
+    Now integrated with memory-based training data for realistic modeling.
     """
 
     def __init__(
@@ -168,11 +167,39 @@ class Simulator:
         self.config = config or SimulationConfig(seed=seed)
         self._rng = random.Random(seed)
 
+        # Training data integration
+        self._training_memories = self._load_training_data()
+        self._stats = self._calculate_training_stats()
+
         # State graph: nodes are files/components, edges are relationships
         self.graph: nx.DiGraph = nx.DiGraph()
         self._initial_state: Optional[nx.DiGraph] = None
 
-        logger.info(f"Simulator initialized: model={model}, seed={seed}")
+        logger.info(f"Simulator initialized: model={model}, seed={seed} (loaded {len(self._training_memories)} memories)")
+
+    def _load_training_data(self) -> List[Dict]:
+        """Attempt to load historical memories for grounded simulation."""
+        try:
+            # We add the examples dir to path for import
+            sys.path.append(str(Path(__file__).parent.parent / "examples" / "btb"))
+            import btb_training_data
+            return btb_training_data.DEBUGGING_MEMORIES
+        except (ImportError, AttributeError):
+            logger.debug("No training data found, using heuristic defaults.")
+            return []
+
+    def _calculate_training_stats(self) -> Dict[str, float]:
+        """Derive success/failure ratios from memories."""
+        if not self._training_memories:
+            return {}
+            
+        stats = {}
+        outcomes = [m.get("outcome") for m in self._training_memories]
+        if outcomes:
+            success_count = outcomes.count("success")
+            stats["global_success_rate"] = success_count / len(outcomes)
+            
+        return stats
 
     def model(
         self,
@@ -317,10 +344,20 @@ class Simulator:
         scenario: ScenarioType,
         run_seed: int
     ) -> Tuple[nx.DiGraph, List[str]]:
-        """Apply scenario transformation to graph."""
+        """Apply scenario transformation to graph, grounded in memories."""
         rng = random.Random(run_seed)
         effects: List[str] = []
         state = self.graph.copy()
+
+        # Context-aware memory injection
+        if self._training_memories:
+            # Pick a memory that matches the "vibe" of the scenario
+            if scenario in [ScenarioType.ROLLBACK, ScenarioType.PARTIAL_REORGANIZE]:
+                # Failure-prone scenarios draw from failure memories
+                failures = [m for m in self._training_memories if m.get("outcome") == "failure"]
+                if failures:
+                    mem = rng.choice(failures)
+                    effects.append(f"Memory Ref: {mem.get('summary', 'unknown_failure')}")
 
         if scenario == ScenarioType.REORGANIZE:
             # Full reorganization: rewire graph structure
@@ -427,9 +464,7 @@ class Simulator:
         event: Dict[str, Any]
     ) -> float:
         """
-        Estimate scenario probability based on characteristics.
-
-        This is heuristic—real calibration needs feedback data.
+        Estimate scenario probability based on characteristics and training data.
         """
         # Base probabilities by scenario type
         base_probs = {
@@ -441,6 +476,15 @@ class Simulator:
         }
 
         prob = base_probs.get(scenario, 0.2)
+
+        # Memory-informed adjustment
+        success_rate = self._stats.get("global_success_rate", 0.5)
+        if scenario in [ScenarioType.REORGANIZE, ScenarioType.INCREMENTAL]:
+            # If historical success rate is high, these scenarios are more probable
+            prob *= (0.5 + success_rate)
+        else:
+            # If historical success rate is low, defensive scenarios (DEFER/ROLLBACK) are more probable
+            prob *= (1.5 - success_rate)
 
         # Adjust by severity
         severity = event.get("severity", "info")

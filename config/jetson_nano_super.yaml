@@ -7,9 +7,9 @@ hardware:
   architecture: "aarch64"
   
   # Compute Limits
-  cpu_cores: 4  # ARM Cortex-A57
+  cpu_cores: 6  # Actual hardware discovered via probe
   gpu_cores: 128 # NVIDIA Maxwell (simulated units)
-  total_ram_mb: 4096 # 4GB LPDDR4
+  total_ram_mb: 8192 # 8GB LPDDR4
   
   # Governance Latency Budget
   # Time allocated for Detect -> Simulate -> Deliberate cycle
@@ -28,6 +28,7 @@ hardware:
     interface: "none"
 
   # Sandbox Resource Allocation (Docker)
+  # Increased due to 8GB total RAM
   sandbox_allocation:
-    memory_mb: 512 # Leave rest for OS + Governance logic
+    memory_mb: 2048 # Leave rest for OS + Governance logic
     cpu_shares: 1024
