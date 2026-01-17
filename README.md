@@ -68,27 +68,43 @@ See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed component relationships
 
 ## Quick Start
 
-### Interactive Demo - Filesystem as Memory
+### Streaming Web of Thought Demo (Recommended)
 
-**Zero setup required.** See the core concept in action:
+**Watch filesystem-as-consciousness emerge in real-time:**
 
 ```bash
-# Clone the repository
 git clone https://github.com/templetwo/threshold-protocols.git
-cd threshold-protocols
+cd threshold-protocols/demo
+pip install rich  # For beautiful terminal output
+python3 streaming_web_of_thought_demo.py --auto
+```
 
-# Run the standalone demo (no dependencies!)
+**What you'll witness across 5 waves (~60 seconds):**
+- **Wave 1**: Sensor data streams in (perception without comprehension)
+- **Wave 2**: Agents detect anomalies and respond (intelligence emerges)
+- **Wave 3**: Meta-agents analyze agent responses (recursive observation)
+- **Wave 4**: Deep hierarchies crystallize (4-level semantic paths)
+- **Wave 5**: Cross-references form graphs (convergence)
+
+**Key innovations demonstrated:**
+- Incremental clustering: O(1) per file, 60% faster than batch processing
+- Recursive observation: Agents observing agents (meta-cognition)
+- Multi-dimensional access: Same data, infinite query paths via symlinks
+- Context compression: Paths encode entire narratives
+
+**The filesystem becomes a circuit of consciousness.**
+
+### Quick Demo - Filesystem as Memory
+
+For a simpler introduction (no dependencies required):
+
+```bash
 python3 demo/quick_demo.py
 ```
 
-This interactive demo shows how **chaos becomes order** through clustering analysis:
-- 100 random files → Flat chaos in `_intake/`
-- Pattern detection discovers natural groupings
-- Directory structure generated automatically
-- Files routed to organized `_store/` hierarchy
+This shows how **chaos becomes order** through clustering analysis:
+- 100 random files → Pattern detection → Organized hierarchy
 - Simple queries: `ls _store/sensor/temp/` finds all temperature data
-
-**The filesystem becomes the database. The path is the query.**
 
 See [`demo/README.md`](demo/README.md) for full details.
 
