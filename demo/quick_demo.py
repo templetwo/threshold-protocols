@@ -16,6 +16,10 @@
 ║                                                                           ║
 ║  No setup required. No dependencies. Just run.                           ║
 ║                                                                           ║
+║  Usage:                                                                   ║
+║    python3 quick_demo.py          # Interactive mode (press Enter)       ║
+║    python3 quick_demo.py --auto   # Non-interactive mode                 ║
+║                                                                           ║
 ╚═══════════════════════════════════════════════════════════════════════════╝
 """
 
@@ -23,12 +27,16 @@ import json
 import os
 import random
 import shutil
+import sys
 import tempfile
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Tuple
+
+# Check for auto mode (non-interactive)
+AUTO_MODE = "--auto" in sys.argv
 
 # Try to use rich for pretty output, fallback to basic if not available
 try:
@@ -381,7 +389,10 @@ def run_demo():
             print(f"  ├── {filename}")
         print(f"  └── ... and {len(files) - 10} more files")
 
-        input("\n[Press Enter to continue to clustering analysis...]")
+        if not AUTO_MODE:
+            input("\n[Press Enter to continue to clustering analysis...]")
+        else:
+            time.sleep(1)
 
         # ====================================================================
         # STEP 2: ANALYZE PATTERNS
@@ -434,7 +445,10 @@ def run_demo():
             else:
                 print(f"  {connector}{path}/")
 
-        input("\n[Press Enter to route files into organized structure...]")
+        if not AUTO_MODE:
+            input("\n[Press Enter to route files into organized structure...]")
+        else:
+            time.sleep(1)
 
         # ====================================================================
         # STEP 3: ROUTE FILES
@@ -456,7 +470,10 @@ def run_demo():
         print()
         show_directory_tree(store_dir, max_depth=2)
 
-        input("\n[Press Enter to see query demonstrations...]")
+        if not AUTO_MODE:
+            input("\n[Press Enter to see query demonstrations...]")
+        else:
+            time.sleep(1)
 
         # ====================================================================
         # STEP 4: DEMONSTRATE QUERIES
