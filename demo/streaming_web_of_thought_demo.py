@@ -129,7 +129,7 @@ def print_tree(root_path: Path, title: str, max_depth=4, show_files=True, sample
                     icon = "🔗" if f.is_symlink() else "📄"
                     parent_tree.add(f"[dim]{icon} {f.name}[/dim]")
                 if len(files) > sample_files:
-                    parent_tree.add(f"[dim italic]... and {len(files) - sample_files} more[/dim italic]")
+                    parent_tree.add(f"[dim italic]... and {len(files) - sample_files} more[/italic][/dim]")
         except PermissionError:
             pass
 
@@ -768,8 +768,8 @@ def run_streaming_demo():
             print_tree(store_dir, f"Evolving Structure (After Wave {wave})", max_depth=4)
 
             if RICH_AVAILABLE and wave >= 2:
-                console.print(f"\n[dim italic]The structure has evolved since Wave {wave-1}.")
-                console.print(f"New branches formed as patterns emerged from the data stream.[/dim italic]")
+                console.print(f"\n[dim italic]The structure has evolved since Wave {wave-1}.[/italic][/dim]")
+                console.print(f"[dim italic]New branches formed as patterns emerged from the data stream.[/italic][/dim]")
 
             pause(3)
 
