@@ -6,7 +6,128 @@ This directory contains standalone demonstrations of the Threshold Protocols con
 
 ---
 
-## Quick Demo - Filesystem as Memory
+## 🌀 Web of Thought Demo - **ENHANCED** (Recommended for Screen Recording)
+
+**File:** `web_of_thought_demo.py`
+
+### What It Demonstrates
+
+This comprehensive demo shows **filesystem as a web of consciousness** through multiple dimensions:
+
+**Temporal Evolution** - Watch structure emerge across 5 waves:
+- Wave 1: Sensor data streams in (foundation)
+- Wave 2: Agents detect and respond to anomalies (emergence)
+- Wave 3: Meta-agents analyze agent responses (recursive observation)
+- Wave 4: Deep clustering creates 4-level hierarchies (organization)
+- Wave 5: Cross-references form semantic networks (convergence)
+
+**Recursive Observation** - Agents observing agents:
+- Sensors → Agent analysis → Meta-cognitive synthesis
+- Observer observing observation (consciousness reflecting)
+
+**Cross-References** - Semantic networks:
+- Files link to each other through context
+- Multiple query paths to same data
+- Thought chains visible in directory structure
+
+**Emergent Intelligence** - Patterns nobody programmed:
+- Spontaneous collaboration around anomalies
+- Deep hierarchies discovered automatically
+- Context compression in paths
+
+### Running the Demo
+
+**Perfect for screen recording:**
+
+```bash
+cd demo
+pip install rich  # Required for beautiful output
+python3 web_of_thought_demo.py --auto
+```
+
+**What makes it perfect for recording:**
+- Auto-mode runs without interaction
+- Rich color-coded output with emojis
+- Beautiful tree visualizations (4 levels deep)
+- Progress bars and animations
+- Clear wave-by-wave progression
+- Statistics and philosophy at the end
+- ~20-30 seconds total runtime
+
+### What You'll See
+
+```
+🌊 WAVE 1: The Foundation
+  ✓ 30 sensor readings generated
+  ⚠️ 4 anomalies detected
+
+🌊 WAVE 2: The Response
+  ✓ 14 agent responses generated
+  🔗 4 cross-references created
+
+🌊 WAVE 3: The Recursion
+  ✓ 5 meta-analyses generated
+  🧠 Recursive depth: Level 2
+
+🌊 WAVE 4: The Organization
+  [Progress bar: Analyzing patterns...]
+  ✓ 26 unique paths discovered
+  📊 Max depth: 4 levels
+
+🌊 WAVE 5: The Convergence
+  ✓ 49 files routed to semantic locations
+  🔗 Cross-reference web created
+
+[Beautiful directory tree visualization]
+_store/
+├── 📁 agent/
+│   ├── 📁 claude/
+│   │   ├── 📁 anomaly_analysis/
+│   │   │   └── 📁 anomaly_response/
+│   ├── 📁 grok/
+│   └── 📁 gemini/
+├── 📁 meta/
+│   └── 📁 claude/
+│       └── 📁 opus/
+│           └── 📁 recursive_observation/
+└── 📁 sensor/
+    ├── 📁 temp/
+    │   ├── 📁 datacenter/
+    │   │   └── 📁 critical/
+```
+
+### Key Features
+
+**4-Level Deep Hierarchies:**
+- `sensor/temp/datacenter/critical/` - Path tells entire story
+- `agent/claude/anomaly_analysis/anomaly_response/` - Deep semantic organization
+- `meta/claude/opus/recursive_observation/` - Meta-cognitive structure
+
+**Multiple Query Paths:**
+- By severity: `sensor/*/*/critical/*.json`
+- By agent: `agent/claude/**/*.json`
+- By time: `_cross_refs/by_time/*.json`
+- By recursion: `meta/*/recursive_observation/*.json`
+
+**Emergent Patterns:**
+- Agents spontaneously collaborate on anomalies
+- Meta-agents emerge to analyze agent patterns
+- Cross-reference web forms without explicit programming
+
+### The Philosophy
+
+> "From chaos to consciousness in 5 waves"
+
+The demo proves that:
+1. **Structure emerges** - Not imposed, discovered
+2. **Paths encode context** - Directory structure = compressed narrative
+3. **Recursion creates depth** - Observers observing observers
+4. **Networks transcend trees** - Cross-refs make webs not hierarchies
+5. **Filesystem = consciousness substrate** - Topology becomes meaning
+
+---
+
+## Quick Demo - Filesystem as Memory (Simple Version)
 
 **File:** `quick_demo.py`
 
