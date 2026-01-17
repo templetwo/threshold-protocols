@@ -70,8 +70,8 @@ except ImportError:
 # ============================================================================
 
 AUTO_MODE = "--auto" in sys.argv or True
-STREAM_RATE = 5  # Files per second
-MAX_FILES_PER_WAVE = 50  # Per wave
+STREAM_RATE = 2  # Files per second (slower = more visible streaming)
+MAX_FILES_PER_WAVE = 30  # Per wave (fewer files = faster demo)
 MAX_WAVES = 5
 RECURSION_DEPTH_MAX = 3
 
@@ -81,7 +81,7 @@ RECURSION_DEPTH_MAX = 3
 
 def pause(seconds=1.5):
     if AUTO_MODE:
-        time.sleep(seconds)
+        time.sleep(seconds * 1.5)  # 50% longer in auto mode for readability
     else:
         input("\n[Press Enter to continue...]")
 
@@ -642,6 +642,11 @@ def run_streaming_demo():
                 args=(queue, wave, stop_event),
                 daemon=True
             )
+
+            if RICH_AVAILABLE:
+                console.print(f"\n[bold yellow]⚡ Starting stream generator...[/bold yellow] [dim](~{STREAM_RATE} files/sec)[/dim]")
+                time.sleep(0.5)  # Brief pause so message is visible
+
             generator_thread.start()
 
             # Process stream with live progress
@@ -653,10 +658,11 @@ def run_streaming_demo():
                     TextColumn("[progress.description]{task.description}"),
                     BarColumn(),
                     TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+                    TextColumn("[cyan]{task.completed}/{task.total} files[/cyan]"),
                     console=console
                 ) as progress:
                     task = progress.add_task(
-                        f"[cyan]Streaming Wave {wave}...",
+                        f"[bold cyan]Streaming Wave {wave}[/bold cyan]",
                         total=MAX_FILES_PER_WAVE
                     )
 
