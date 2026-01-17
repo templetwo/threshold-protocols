@@ -68,12 +68,34 @@ See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed component relationships
 
 ## Quick Start
 
+### Interactive Demo - Filesystem as Memory
+
+**Zero setup required.** See the core concept in action:
+
 ```bash
 # Clone the repository
 git clone https://github.com/templetwo/threshold-protocols.git
 cd threshold-protocols
 
-# Install dependencies
+# Run the standalone demo (no dependencies!)
+python3 demo/quick_demo.py
+```
+
+This interactive demo shows how **chaos becomes order** through clustering analysis:
+- 100 random files → Flat chaos in `_intake/`
+- Pattern detection discovers natural groupings
+- Directory structure generated automatically
+- Files routed to organized `_store/` hierarchy
+- Simple queries: `ls _store/sensor/temp/` finds all temperature data
+
+**The filesystem becomes the database. The path is the query.**
+
+See [`demo/README.md`](demo/README.md) for full details.
+
+### Full Threshold Framework
+
+```bash
+# Install dependencies for governance protocols
 pip install -r requirements.txt
 
 # Run a sample threshold detection
