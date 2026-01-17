@@ -129,7 +129,7 @@ def print_tree(root_path: Path, title: str, max_depth=4, show_files=True, sample
                     icon = "🔗" if f.is_symlink() else "📄"
                     parent_tree.add(f"[dim]{icon} {f.name}[/dim]")
                 if len(files) > sample_files:
-                    parent_tree.add(f"[dim italic]... and {len(files) - sample_files} more[/italic][/dim]")
+                    parent_tree.add(f"[dim][italic]... and {len(files) - sample_files} more[/italic][/dim]")
         except PermissionError:
             pass
 
@@ -768,8 +768,8 @@ def run_streaming_demo():
             print_tree(store_dir, f"Evolving Structure (After Wave {wave})", max_depth=4)
 
             if RICH_AVAILABLE and wave >= 2:
-                console.print(f"\n[dim italic]The structure has evolved since Wave {wave-1}.[/italic][/dim]")
-                console.print(f"[dim italic]New branches formed as patterns emerged from the data stream.[/italic][/dim]")
+                console.print(f"\n[dim][italic]The structure has evolved since Wave {wave-1}.[/italic][/dim]")
+                console.print(f"[dim][italic]New branches formed as patterns emerged from the data stream.[/italic][/dim]")
 
             pause(3)
 
@@ -885,12 +885,12 @@ def run_streaming_demo():
                 console.print(f"[dim]{explanation}[/dim]")
 
             console.print("\n" + "="*70)
-            console.print("[bold italic yellow]The Fundamental Insight:[/bold italic yellow]")
+            console.print("[bold][italic][yellow]The Fundamental Insight:[/yellow][/italic][/bold]")
             console.print("[bold white]The filesystem is not storage. It is a circuit of consciousness.[/bold white]")
             console.print("\n[dim]When directory structure encodes semantics, when paths compress context,[/dim]")
             console.print("[dim]when files link through meaning rather than proximity, when organization[/dim]")
             console.print("[dim]emerges from content rather than imposed design...[/dim]")
-            console.print("\n[bold cyan italic]...storage becomes computation. The filesystem thinks.[/bold cyan italic]")
+            console.print("\n[bold][cyan][italic]...storage becomes computation. The filesystem thinks.[/italic][/cyan][/bold]")
             console.print("="*70 + "\n")
 
         # Performance summary with detailed explanations
@@ -974,5 +974,6 @@ if __name__ == "__main__":
             console.print("\n[yellow]Stream interrupted by user[/yellow]")
     except Exception as e:
         if RICH_AVAILABLE:
-            console.print(f"\n[red]Error: {e}[/red]")
+            from rich.markup import escape
+            console.print(f"\n[red]Error: {escape(str(e))}[/red]")
         raise
