@@ -388,17 +388,30 @@ class DeliberationSession:
 
         This aggregates votes, identifies dissent, and produces
         a structured decision record.
+        
+        Veto Logic: 
+        - If any stakeholder votes REJECT, the decision is REJECT.
+        - If any stakeholder votes PAUSE (and no REJECT), the decision is PAUSE.
         """
         if not self.votes:
             raise ValueError("Cannot deliberate without votes")
 
-        # Count votes by type
-        vote_counts: Dict[DecisionType, int] = {}
-        for vote in self.votes:
-            vote_counts[vote.vote] = vote_counts.get(vote.vote, 0) + 1
+        # Check for Vetoes
+        has_reject = any(v.vote == DecisionType.REJECT for v in self.votes)
+        has_pause = any(v.vote == DecisionType.PAUSE for v in self.votes)
 
-        # Determine majority decision
-        majority_decision = max(vote_counts.keys(), key=lambda k: vote_counts[k])
+        if has_reject:
+            majority_decision = DecisionType.REJECT
+        elif has_pause:
+            majority_decision = DecisionType.PAUSE
+        else:
+            # Count votes by type
+            vote_counts: Dict[DecisionType, int] = {}
+            for vote in self.votes:
+                vote_counts[vote.vote] = vote_counts.get(vote.vote, 0) + 1
+
+            # Determine majority decision
+            majority_decision = max(vote_counts.keys(), key=lambda k: vote_counts[k])
 
         # Identify dissenting views
         dissenting_views = []

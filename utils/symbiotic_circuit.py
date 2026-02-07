@@ -63,6 +63,10 @@ class SymbioticCircuit(ThresholdCircuit):
             description="Minimum Phase Synchronization (R) for coherent action"
         )
         
+        # Adjust existing thresholds for better differentiation
+        self.detector.add_threshold(MetricType.FILE_COUNT, 100)
+        self.detector.add_threshold(MetricType.ENTROPY, 0.95) # High entropy is the danger
+        
         logger.info("SymbioticCircuit initialized with Liquid Core")
 
     def pulse(self, external_input: Optional[torch.Tensor] = None):
@@ -75,8 +79,15 @@ class SymbioticCircuit(ThresholdCircuit):
         session: DeliberationSession,
         events: List[ThresholdEvent],
         prediction: Any
-    ) -> None: 
-        """Add standard votes PLUS the Physiological Stakeholder vote."""
+    ) -> None:
+        """
+        Add standard votes PLUS the Physiological Stakeholder vote.
+        
+        The Physiological Stakeholder enforces a 'Bounded Coherence Window':
+        - Too Low (R < 0.3): Chaos / Incoherence -> PAUSE
+        - Healthy (0.4 < R < 0.9): Safe Operational Band -> PROCEED
+        - Too High (R > 0.98): Rigidification / Obsessive Attractor -> PAUSE
+        """
         # 1. Add standard votes (Technical, Ethical) from parent
         super()._add_auto_votes(session, events, prediction)
         
@@ -85,18 +96,18 @@ class SymbioticCircuit(ThresholdCircuit):
         
         if r_val < 0.3:
             phys_vote = DecisionType.PAUSE
-            phys_rationale = f"CRITICAL: Phase Desync detected (R={r_val:.3f}). Internal state is incoherent."
-        elif r_val < 0.5:
+            phys_rationale = f"INTERNAL: Incoherent state (R={r_val:.3f}). Thought patterns too scattered for safe agency."
+        elif r_val < 0.4:
             phys_vote = DecisionType.CONDITIONAL
-            phys_rationale = f"WARNING: Fluid state (R={r_val:.3f}). Require increased coupling before proceeding."
+            phys_rationale = f"INTERNAL: Marginal coherence (R={r_val:.3f}). Require increased focus (coupling) to proceed."
         elif r_val > 0.98:
             phys_vote = DecisionType.PAUSE
-            phys_rationale = f"CRITICAL: System Rigidification (R={r_val:.3f}). Attractor is too dominant."
+            phys_rationale = f"INTERNAL: Rigidification detected (R={r_val:.3f}). System is in an obsessive attractor state."
         else:
             phys_vote = DecisionType.PROCEED
-            phys_rationale = f"System is coherent (R={r_val:.3f}). Phase synchronization within Lantern Zone."
+            phys_rationale = f"INTERNAL: Coherence within Bounded Window (R={r_val:.3f}). System is stable and flexible."
 
-        logger.info(f"Physiological Stakeholder Voting: {phys_vote.value}")
+        logger.info(f"Physiological Stakeholder Voting: {phys_vote.value} ({phys_rationale})")
         
         session.record_vote(StakeholderVote(
             stakeholder_id="physiological-core",
@@ -104,7 +115,7 @@ class SymbioticCircuit(ThresholdCircuit):
             vote=phys_vote,
             rationale=phys_rationale,
             confidence=0.9,
-            concerns=["Phase instability"] if r_val < 0.4 else []
+            concerns=["Phase instability"] if r_val < 0.4 else (["Obsessive sync"] if r_val > 0.98 else [])
         ))
 
     def run_symbiotic(self, target: str, iterations: int = 1) -> CircuitResult:

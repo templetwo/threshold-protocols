@@ -312,12 +312,13 @@ class ThresholdCircuit:
         ))
 
         # Ethical stakeholder vote (more conservative)
-        if critical_count > 0 or (best and "data_loss" in str(best.side_effects)):
+        highest_severity = max([e.severity for e in events], key=lambda s: self._severity_rank(s))
+        if highest_severity.value in ["critical", "emergency"] or (best and "data_loss" in str(best.side_effects)):
             ethics_vote = DecisionType.PAUSE
             ethics_rationale = "Potential for irreversible harm - recommend pause"
         else:
             ethics_vote = DecisionType.PROCEED
-            ethics_rationale = "No significant ethical concerns"
+            ethics_rationale = "Thresholds within warning range; no critical ethical breach detected"
 
         session.record_vote(StakeholderVote(
             stakeholder_id="auto-ethical",
