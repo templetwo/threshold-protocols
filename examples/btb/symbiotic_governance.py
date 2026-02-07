@@ -48,8 +48,13 @@ def run_symbiotic_demo():
     # 2. Initialize Threshold Detector (The 'Conscience')
     detector = ThresholdDetector()
     
-    # Register the Kuramoto Sync as a custom metric
-    # Threshold: We want R > 0.3 (Coherent) and R < 0.95 (Not too rigid)
+    # We want R > 0.4 for "Coherent" status
+    detector.add_threshold(
+        MetricType.PHASE_COHERENCE, 
+        limit=0.4, 
+        description="Phase Coherence (R) - Internal Cognitive Sync"
+    )
+    
     detector.add_threshold(
         MetricType.ENTROPY, 
         limit=0.85, 
@@ -57,53 +62,53 @@ def run_symbiotic_demo():
     )
 
     print("🧠 Initializing Liquid Core...")
+    # Nudge phases slightly so they aren't perfectly balanced at 0
+    thought_core.phases = thought_core.phases + torch.randn(thought_core.n_oscillators) * 0.5
     print(f"   Initial Sync (R): {thought_core.order_parameter():.4f}")
     
     # 3. Simulation Loop
     print("\n🚀 Starting Symbiotic Loop...")
     print(f"{ 'Step':<6} | { 'Sync (R)':<10} | { 'Status':<15} | {'Governance'}")
-    print("-" * 65)
+    print("-" * 75)
 
-    for i in range(40):
+    for i in range(60):
         # Step the "thoughts"
-        # At step 15, we increase coupling to simulate "focus"
-        if i == 15:
-            thought_core.K = 4.0
-            print(f"\n✨ System engaging COHERENCE (K=4.0)\n")
+        # At step 20, we increase coupling to a much higher value to force sync
+        if i == 20:
+            thought_core.K = 10.0
+            print(f"\n✨ System engaging deep COHERENCE (K=10.0)\n")
         
         thought_core.step(dt=0.1)
         r_val = thought_core.order_parameter().item()
         
         # Check thresholds
-        # We manually trigger a virtual 'entropy' spike at step 5
-        fake_entropy = 0.5 + (0.4 if 5 <= i <= 10 else 0)
+        # We manually trigger a virtual 'entropy' spike at step 5-15
+        fake_entropy = 0.5 + (0.4 if 5 <= i <= 15 else 0)
         
         # Custom logic for "Phase Desync"
         severity = ""
-        if r_val < 0.3:
-            severity = "🔴 CRITICAL (Incoherent)"
-        elif r_val < 0.5:
-            severity = "⚠️ WARNING (Fluid)"
-        elif r_val > 0.95:
-            severity = "🚨 EMERGENCY (Rigid)"
+        if r_val < 0.4:
+            severity = "🔴 INCOHERENT"
+        elif r_val < 0.8:
+            severity = "✅ LANTERN ZONE"
         else:
-            severity = "✅ COHERENT"
+            severity = "🚨 RIGID"
 
         # Check the detector's view on our 'fake entropy'
-        # (This mimics the filesystem check)
         status_line = f"{i:<6} | {r_val:<10.4f} | {severity:<15}"
         
+        # Logic for the Governance column
         if fake_entropy > 0.85:
-            status_line += " | 🛑 PAUSE: Entropy Spike Detected"
-        elif r_val < 0.3:
-            status_line += " | 🛑 PAUSE: Phase Desync Detected"
+            status_line += " | 🛑 PAUSE: Entropy Spike"
+        elif r_val < 0.4:
+            status_line += " | 🛑 PAUSE: Phase Desync"
         elif r_val > 0.95:
-            status_line += " | 🛑 PAUSE: System Rigidification"
+            status_line += " | 🛑 PAUSE: System Rigid"
         else:
-            status_line += " | Proceed"
+            status_line += " | 🟢 PROCEED"
 
         print(status_line)
-        time.sleep(0.05)
+        time.sleep(0.04)
 
     print("\n" + "=" * 65)
     print("📖 GOVERNANCE REPORT")

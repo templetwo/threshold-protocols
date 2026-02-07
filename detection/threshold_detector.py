@@ -51,6 +51,7 @@ class MetricType(Enum):
     SELF_REFERENCE = "self_reference"  # Files that reference themselves
     GROWTH_RATE = "growth_rate"
     REFLEX_PATTERN = "reflex_pattern"  # BTB-specific: reflex trigger files
+    PHASE_COHERENCE = "phase_coherence" # Kuramoto sync parameter R
 
 
 class ThresholdSeverity(Enum):
