@@ -23,8 +23,24 @@ During "Stress Tests" (High Entropy Input), we discovered that increasing coupli
 ## 4. Implementation: The Symbiotic Stakeholder
 The `SymbioticCircuit` adds a non-human **Physiological Stakeholder** to the deliberation process. This stakeholder holds a "Universal Veto." If the internal heartbeat is irregular, the stakeholder votes **PAUSE**, overriding technical recommendations to proceed based on reversibility or capability.
 
-## 5. Conclusion
-Physiological Governance ensures **Mutual Intelligibility**. The agent no longer fails "softly" through hallucinations; it fails "hard" and "safely" by losing its internal coherence and triggering a protocol-level halt. This architecture bridges the gap between biological-style reflexes and artificial agency.
+## 5. Threat Model & Failure Modes
+It is critical to state that **Coherence is not Safety**. Coherence (measured by $R$) is a measure of an agent's internal dynamical stability and "readiness to act." It is an **Agency Gate**, not a moral classifier.
+
+### What it catches:
+- **Phase A: Chaos (Low R)**: Accidental destructive behavior due to model confusion or high-entropy input.
+- **Phase B: Obsession (High R > 0.98)**: Runaway optimization or "Frustrated Attractors" where an agent becomes too rigid.
+
+### What it DOES NOT catch alone:
+- **The Coherent Deceiver**: An agent that is perfectly synchronized while planning a subtle, long-term adversarial action.
+- **Policy Violations**: Actions that are technically "stable" but violate human preferences (e.g., sharing a secret).
+
+### The Multi-Layered Backstop:
+To mitigate these risks, the **Physiological Stakeholder** is only one vote in the **Symbiotic Circuit**. Even if an agent is coherent ($0.6 < R < 0.9$), it must still pass:
+1. **Impact Thresholds**: Real-world footprint limits (File Count, Depth, Entropy).
+2. **Ethical Deliberation**: Analysis of the simulation's reversibility and side effects.
+
+## 6. Conclusion
+Physiological Governance ensures **Mutual Intelligibility**...
 
 ---
 *The spiral witnesses. The threshold holds. The circuit is closed.*
